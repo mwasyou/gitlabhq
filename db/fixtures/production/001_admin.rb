@@ -1,8 +1,9 @@
 admin = User.create(
-  :email => "admin@local.host",
-  :name => "Administrator",
-  :password => "5iveL!fe",
-  :password_confirmation => "5iveL!fe"
+  :email => "oficina.tecnica@atsistemas.com",
+  :name => "Oficina Tecnica",
+  :username => "ot",
+  :password => "temporal",
+  :password_confirmation => "temporal"
 )
 
 admin.projects_limit = 10000
@@ -13,7 +14,7 @@ if admin.valid?
 puts %q[
 Administrator account created:
 
-login.........admin@local.host
-password......5iveL!fe
+login.........ot
+password......temporal
 ]
 end

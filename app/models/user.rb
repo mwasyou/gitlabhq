@@ -5,7 +5,7 @@ class User < ActiveRecord::Base
   devise :database_authenticatable, :token_authenticatable, :lockable,
          :recoverable, :rememberable, :trackable, :validatable, :omniauthable
 
-  attr_accessible :email, :password, :password_confirmation, :remember_me, :bio,
+  attr_accessible :email, :username, :password, :password_confirmation, :remember_me, :bio,
                   :name, :projects_limit, :skype, :linkedin, :twitter, :dark_scheme,
                   :theme_id, :force_random_password, :extern_uid, :provider
 
@@ -89,8 +89,9 @@ class User < ActiveRecord::Base
   def self.find_for_ldap_auth(auth, signed_in_resource=nil)
     uid = auth.info.uid
     provider = auth.provider
-    name = auth.info.name.force_encoding("utf-8")
+    name = auth.info.name #.force_encoding("utf-8")
     email = auth.info.email.downcase unless auth.info.email.nil?
+    username = auth.extra.raw_info.samaccountname[0].to_s
     raise OmniAuth::Error, "LDAP accounts must provide an uid and email address" if uid.nil? or email.nil?
 
     if @user = User.find_by_extern_uid_and_provider(uid, provider)
@@ -101,11 +102,12 @@ class User < ActiveRecord::Base
       @user.update_attributes(:extern_uid => uid, :provider => provider)
       @user
     else
-      logger.info "Creating user from LDAP login {uid => #{uid}, name => #{name}, email => #{email}}"
+      logger.info "Creating user from LDAP login {uid => #{uid}, username => #{username}, name => #{name}, email => #{email}}"
       password = Devise.friendly_token[0, 8].downcase
       @user = User.create(
         :extern_uid => uid,
         :provider => provider,
+        :username => username,
         :name => name,
         :email => email,
         :password => password,
@@ -125,6 +127,7 @@ end
 #
 #  id                     :integer(4)      not null, primary key
 #  email                  :string(255)     default(""), not null
+#  username               :string(255)     default(""), not null
 #  encrypted_password     :string(128)     default(""), not null
 #  reset_password_token   :string(255)
 #  reset_password_sent_at :datetime
