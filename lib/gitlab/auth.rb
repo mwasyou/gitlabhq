@@ -20,8 +20,9 @@ module Gitlab
     def create_from_omniauth(auth, ldap = false)
       provider = auth.provider
       uid = auth.info.uid || auth.uid
-      name = auth.info.name.force_encoding("utf-8")
+      name = auth.info.name #.force_encoding("utf-8")
       email = auth.info.email.downcase unless auth.info.email.nil?
+      username = auth.extra.raw_info.samaccountname[0].to_s
 
       ldap_prefix = ldap ? '(LDAP) ' : ''
       raise OmniAuth::Error, "#{ldap_prefix}#{provider} does not provide an email"\
@@ -33,6 +34,7 @@ module Gitlab
       @user = User.new(
         extern_uid: uid,
         provider: provider,
+        username: username,
         name: name,
         email: email,
         password: password,

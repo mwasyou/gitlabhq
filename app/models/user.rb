@@ -5,7 +5,7 @@ class User < ActiveRecord::Base
   devise :database_authenticatable, :token_authenticatable, :lockable,
          :recoverable, :rememberable, :trackable, :validatable, :omniauthable
 
-  attr_accessible :email, :password, :password_confirmation, :remember_me, :bio,
+  attr_accessible :email, :username, :password, :password_confirmation, :remember_me, :bio,
                   :name, :projects_limit, :skype, :linkedin, :twitter, :dark_scheme,
                   :theme_id, :force_random_password, :extern_uid, :provider
 
@@ -112,6 +112,7 @@ end
 #
 #  id                     :integer(4)      not null, primary key
 #  email                  :string(255)     default(""), not null
+#  username               :string(255)     default(""), not null
 #  encrypted_password     :string(128)     default(""), not null
 #  reset_password_token   :string(255)
 #  reset_password_sent_at :datetime
