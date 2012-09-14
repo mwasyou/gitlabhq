@@ -22,7 +22,7 @@ header {
    *
    */
   .app_logo {
-    width:300px;
+    width:400px;
     float:left;
     position:relative;
     top:-5px;
@@ -32,7 +32,7 @@ header {
       h1 {
         padding-top: 5px;
         width:90px;
-        background: url('logo_atsistemas.png') no-repeat 0px -3px;
+        background: url('logo_atsistemas.png') no-repeat 0px 0px;
         float:left;
         margin-left:5px;
         font-size:36px;
@@ -40,9 +40,9 @@ header {
         font-weight:normal;
         color:$style_color;
         text-shadow: 0 1px 1px #FFF;
-        padding-left:170px;
+        padding-left:250px;
         height:40px;
-        font-family: 'Korolev', sans-serif;
+        font-family: 'LetterGothicStd', sans-serif;
       }
 
     }
@@ -75,7 +75,7 @@ header {
     margin:0;
     margin-right:30px;
     font-size:36px;
-    line-height:36px;
+    line-height:38px;
     font-weight:normal;
     color:$style_color;
     text-shadow: 0 1px 1px #FFF;
