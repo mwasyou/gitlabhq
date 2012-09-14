@@ -15,9 +15,9 @@ public/uploads/
 nohup.out
 Vagrantfile
 .vagrant
-config/gitlab.yml
-config/database.yml
-config/unicorn.rb
+#config/gitlab.yml
+#config/database.yml
+#config/unicorn.rb
 db/data.yml
 .idea
 .DS_Store
