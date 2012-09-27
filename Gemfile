@@ -57,7 +57,7 @@ gem "seed-fu"
 
 # Markdown to HTML
 gem "redcarpet",     "~> 2.1.1"
-gem "github-markup", "~> 0.7.4"
+gem "github-markup", "~> 0.7.4", require: 'github/markup'
 
 # Servers
 gem "thin"
@@ -96,6 +96,7 @@ group :assets do
   gem "therubyracer"
 
   gem 'chosen-rails'
+  gem 'jquery-atwho-rails', '0.1.6'
   gem "jquery-rails",     "2.0.2"
   gem "jquery-ui-rails",  "0.5.0"
   gem "modernizr",        "2.5.3"
@@ -137,6 +138,7 @@ group :test do
   gem 'email_spec'
   gem 'resque_spec'
   gem "webmock"
+  gem 'test_after_commit'
 end
 
 group :production do

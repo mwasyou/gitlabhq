@@ -1,6 +1,9 @@
 class Event < ActiveRecord::Base
   include PushEvent
 
+  attr_accessible :project, :action, :data, :author_id, :project_id,
+                  :target_id, :target_type
+
   default_scope where("author_id IS NOT NULL")
 
   Created   = 1
@@ -131,6 +134,7 @@ class Event < ActiveRecord::Base
       "opened"
     end
   end
+
 
   delegate :name, :email, to: :author, prefix: true, allow_nil: true
   delegate :title, to: :issue, prefix: true, allow_nil: true

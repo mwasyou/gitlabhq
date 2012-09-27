@@ -48,8 +48,10 @@ module Gitlab
     def gfm(text, html_options = {})
       return text if text.nil?
 
-      # prevents the string supplied through the _text_ argument to be altered
-      text = text.dup
+      # Duplicate the string so we don't alter the original, then call to_str
+      # to cast it back to a String instead of a SafeBuffer. This is required
+      # for gsub calls to work as we need them to.
+      text = text.dup.to_str
 
       @html_options = html_options
 
@@ -172,7 +174,7 @@ module Gitlab
 
     def reference_commit(identifier)
       if commit = @project.commit(identifier)
-        link_to(identifier, project_commit_path(@project, id: commit.id), html_options.merge(title: CommitDecorator.new(commit).link_title, class: "gfm gfm-commit #{html_options[:class]}"))
+        link_to(identifier, project_commit_path(@project, commit), html_options.merge(title: CommitDecorator.new(commit).link_title, class: "gfm gfm-commit #{html_options[:class]}"))
       end
     end
   end
