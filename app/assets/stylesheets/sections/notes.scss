@@ -10,13 +10,6 @@
   padding:0px;
 }
 
-#new-notes-list:not(.reversed) {
-  border-top:1px solid #aaa;
-}
-#new-notes-list.reversed {
-  border-bottom:1px solid #ccc;
-}
-
 .issue_notes,
 .wiki_notes {
   .note_content {
@@ -33,9 +26,6 @@
 }
 
 #new_note {
-  .note-text {
-    height:40px;
-  }
   .attach_holder {
     display:none;
   }
@@ -53,7 +43,9 @@
   padding: 8px 0;
   overflow: hidden;
   display: block;
+  position:relative;
   img {float: left; margin-right: 10px;}
+  img.emoji {float:none;margin:0;}
   .note-author cite{font-style: italic;}
   p { color:$style_color; }
   .note-author { color: $style_color;}
@@ -65,7 +57,9 @@
 
   .delete-note {
     display:none;
-    float:right;
+    position:absolute;
+    right:0;
+    top:0;
   }
 
   &:hover {
@@ -79,6 +73,11 @@
 #notes-list.reversed .note,
 #new-notes-list.reversed .note {
   border-top: 1px solid #eee;
+}
+
+/* mark vote notes */
+.voting_notes .note {
+  padding: 8px 0;
 }
 
 .notes-status {
