@@ -1,11 +1,6 @@
-class MilestonesController < ApplicationController
-  before_filter :project
+class MilestonesController < ProjectResourceController
   before_filter :module_enabled
   before_filter :milestone, only: [:edit, :update, :destroy, :show]
-  layout "project"
-
-  # Authorize
-  before_filter :add_project_abilities
 
   # Allow read any milestone
   before_filter :authorize_read_milestone!
@@ -35,7 +30,7 @@ class MilestonesController < ApplicationController
   end
 
   def show
-    @issues = @milestone.issues.opened.page(params[:page]).per(40)
+    @issues = @milestone.issues
     @users = @milestone.participants
 
     respond_to do |format|
@@ -59,7 +54,7 @@ class MilestonesController < ApplicationController
 
     respond_to do |format|
       format.js
-      format.html do 
+      format.html do
         if @milestone.valid?
           redirect_to [@project, @milestone]
         else

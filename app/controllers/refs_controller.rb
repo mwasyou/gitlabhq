@@ -1,17 +1,13 @@
-class RefsController < ApplicationController
+class RefsController < ProjectResourceController
   include Gitlab::Encode
-  before_filter :project
 
   # Authorize
-  before_filter :add_project_abilities
   before_filter :authorize_read_project!
   before_filter :authorize_code_access!
   before_filter :require_non_empty_project
 
   before_filter :ref
   before_filter :define_tree_vars, only: [:blob, :logs_tree]
-
-  layout "project"
 
   def switch
     respond_to do |format|
@@ -58,10 +54,8 @@ class RefsController < ApplicationController
     @hex_path = Digest::SHA1.hexdigest(params[:path] || "")
 
     if params[:path]
-      @history_path = project_tree_path(@project, File.join(@ref, params[:path]))
       @logs_path = logs_file_project_ref_path(@project, @ref, params[:path])
     else
-      @history_path = project_tree_path(@project, @ref)
       @logs_path = logs_tree_project_ref_path(@project, @ref)
     end
   rescue
