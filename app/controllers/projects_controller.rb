@@ -1,4 +1,4 @@
-require Rails.root.join('lib', 'gitlab', 'graph_commit')
+require Rails.root.join('lib', 'gitlab', 'graph', 'json_builder')
 
 class ProjectsController < ProjectResourceController
   skip_before_filter :project, only: [:new, :create]
@@ -21,9 +21,10 @@ class ProjectsController < ProjectResourceController
     @project = Project.create_by_user(params[:project], current_user)
 
     respond_to do |format|
+      flash[:notice] = 'Project was successfully created.' if @project.saved?
       format.html do
         if @project.saved?
-          redirect_to(@project, notice: 'Project was successfully created.')
+          redirect_to @project
         else
           render action: "new"
         end
@@ -33,8 +34,11 @@ class ProjectsController < ProjectResourceController
   end
 
   def update
+    status = ProjectUpdateContext.new(project, current_user, params).execute
+
     respond_to do |format|
-      if project.update_attributes(params[:project])
+      if status
+        flash[:notice] = 'Project was successfully updated.'
         format.html { redirect_to edit_project_path(project), notice: 'Project was successfully updated.' }
         format.js
       else
@@ -42,6 +46,10 @@ class ProjectsController < ProjectResourceController
         format.js
       end
     end
+
+  rescue Project::TransferError => ex
+    @error = ex
+    render :update_failed
   end
 
   def show
@@ -79,10 +87,14 @@ class ProjectsController < ProjectResourceController
   end
 
   def graph
-    @days_json, @commits_json = Gitlab::GraphCommit.to_graph(project)
+    graph = Gitlab::Graph::JsonBuilder.new(project)
+
+    @days_json, @commits_json = graph.days_json, graph.commits_json
   end
 
   def destroy
+    return access_denied! unless can?(current_user, :remove_project, project)
+
     # Disable the UsersProject update_repository call, otherwise it will be
     # called once for every person removed from the project
     UsersProject.skip_callback(:destroy, :after, :update_repository)

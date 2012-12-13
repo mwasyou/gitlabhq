@@ -3,7 +3,7 @@ class Admin::UsersController < AdminController
     @admin_users = User.scoped
     @admin_users = @admin_users.filter(params[:filter])
     @admin_users = @admin_users.search(params[:name]) if params[:name].present?
-    @admin_users = @admin_users.order("updated_at DESC").page(params[:page])
+    @admin_users = @admin_users.order("name ASC").page(params[:page])
   end
 
   def show
@@ -98,6 +98,9 @@ class Admin::UsersController < AdminController
 
   def destroy
     @admin_user = User.find(params[:id])
+    if @admin_user.my_own_projects.count > 0
+      redirect_to admin_users_path, alert: "User is a project owner and can't be removed." and return
+    end
     @admin_user.destroy
 
     respond_to do |format|

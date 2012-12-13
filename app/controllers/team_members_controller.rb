@@ -21,7 +21,11 @@ class TeamMembersController < ProjectResourceController
       params[:project_access]
     )
 
-    redirect_to project_team_index_path(@project)
+    if params[:redirect_to]
+      redirect_to params[:redirect_to]
+    else
+      redirect_to project_team_index_path(@project)
+    end
   end
 
   def update
@@ -42,5 +46,13 @@ class TeamMembersController < ProjectResourceController
       format.html { redirect_to project_team_index_path(@project) }
       format.js { render nothing: true }
     end
+  end
+
+  def apply_import
+    giver = Project.find(params[:source_project_id])
+    status = UsersProject.import_team(giver, project)
+    notice = status ? "Succesfully imported" : "Import failed"
+
+    redirect_to project_team_members_path(project), notice: notice
   end
 end

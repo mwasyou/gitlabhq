@@ -1,3 +1,15 @@
+# == Schema Information
+#
+# Table name: users_projects
+#
+#  id             :integer          not null, primary key
+#  user_id        :integer          not null
+#  project_id     :integer          not null
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  project_access :integer          default(0), not null
+#
+
 class UsersProject < ActiveRecord::Base
   include GitHost
 
@@ -21,6 +33,35 @@ class UsersProject < ActiveRecord::Base
   delegate :name, :email, to: :user, prefix: true
 
   class << self
+    def import_team(source_project, target_project)
+      UsersProject.without_repository_callback do
+        UsersProject.transaction do
+          team = source_project.users_projects.all
+
+          team.each do |tm|
+            # Skip if user already present in team
+            next if target_project.users.include?(tm.user)
+
+            new_tm = tm.dup
+            new_tm.id = nil
+            new_tm.project_id = target_project.id
+            new_tm.save
+          end
+        end
+      end
+
+      target_project.update_repository
+      true
+    rescue
+      false
+    end
+
+    def without_repository_callback
+      UsersProject.skip_callback(:destroy, :after, :update_repository)
+      yield
+      UsersProject.set_callback(:destroy, :after, :update_repository)
+    end
+
     def bulk_delete(project, user_ids)
       UsersProject.transaction do
         UsersProject.where(:user_id => user_ids, :project_id => project.id).each do |users_project|
@@ -90,16 +131,3 @@ class UsersProject < ActiveRecord::Base
     self.class.access_roles.invert[self.project_access]
   end
 end
-
-# == Schema Information
-#
-# Table name: users_projects
-#
-#  id             :integer         not null, primary key
-#  user_id        :integer         not null
-#  project_id     :integer         not null
-#  created_at     :datetime        not null
-#  updated_at     :datetime        not null
-#  project_access :integer         default(0), not null
-#
-
