@@ -3,7 +3,7 @@
   %h3.page_title
     Milestones
     - if can? current_user, :admin_milestone, @project
-      = link_to "New Milestone", new_project_milestone_path(@project), class: "right btn small", title: "New Milestone"
+      = link_to "New Milestone", new_project_milestone_path(@project), class: "pull-right btn btn-small", title: "New Milestone"
   %br
   %div.ui-box
     .title
@@ -11,15 +11,18 @@
         %li{class: ("active" if (params[:f] == "active" || !params[:f]))}
           = link_to project_milestones_path(@project, f: "active") do
             Active
+        %li{class: ("active" if params[:f] == "closed")}
+          = link_to project_milestones_path(@project, f: "closed") do
+            Closed
         %li{class: ("active" if params[:f] == "all")}
           = link_to project_milestones_path(@project, f: "all") do
             All
 
-    %ul.unstyled
+    %ul.well-list
       = render @milestones
 
       - if @milestones.present?
-        %li.bottom= paginate @milestones, remote: true, theme: "gitlab"
+        %li.bottom= paginate @milestones, theme: "gitlab"
       - else
         %li
           %h3.nothing_here_message Nothing to show here

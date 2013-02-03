@@ -10,6 +10,7 @@ GET /users
 [
   {
     "id": 1,
+    "username": "john_smith",
     "email": "john@example.com",
     "name": "John Smith",
     "blocked": false,
@@ -19,10 +20,13 @@ GET /users
     "linkedin": "",
     "twitter": "",
     "dark_scheme": false,
+    "extern_uid": "john.smith",
+    "provider": "provider_name",
     "theme_id": 1
   },
   {
     "id": 2,
+    "username": "jack_smith",
     "email": "jack@example.com",
     "name": "Jack Smith",
     "blocked": false,
@@ -32,6 +36,8 @@ GET /users
     "linkedin": "",
     "twitter": "",
     "dark_scheme": true,
+    "extern_uid": "jack.smith",
+    "provider": "provider_name",
     "theme_id": 1
   }
 ]
@@ -52,6 +58,7 @@ Parameters:
 ```json
 {
   "id": 1,
+  "username": "john_smith",
   "email": "john@example.com",
   "name": "John Smith",
   "blocked": false,
@@ -61,6 +68,8 @@ Parameters:
   "linkedin": "",
   "twitter": "",
   "dark_scheme": false,
+  "extern_uid": "john.smith",
+  "provider": "provider_name",
   "theme_id": 1
 }
 ```
@@ -75,13 +84,51 @@ POST /users
 Parameters:
 + `email` (required)                  - Email
 + `password` (required)               - Password
++ `username` (required)               - Username
 + `name` (required)                   - Name
 + `skype`                             - Skype ID
 + `linkedin`                          - Linkedin
 + `twitter`                           - Twitter account
 + `projects_limit`                    - Number of projects user can create
++ `extern_uid`                        - External UID
++ `provider`                          - External provider name
++ `bio`                               - User's bio
 
 Will return created user with status `201 Created` on success, or `404 Not
+found` on fail.
+
+## User modification
+Modify user. Available only for admin
+
+```
+PUT /users/:id
+```
+
+Parameters:
++ `email`                             - Email
++ `username`                          - Username
++ `name`                              - Name
++ `password`                          - Password
++ `skype`                             - Skype ID
++ `linkedin`                          - Linkedin
++ `twitter`                           - Twitter account
++ `projects_limit`                    - Limit projects wich user can create
++ `extern_uid`                        - External UID
++ `provider`                          - External provider name
++ `bio`                               - User's bio
+
+
+Will return created user with status `200 OK` on success, or `404 Not
+found` on fail.
+
+## User deletion
+Delete user. Available only for admin
+
+```
+DELETE /users/:id
+```
+
+Will return deleted user with status `200 OK` on success, or `404 Not
 found` on fail.
 
 ## Current user
@@ -95,6 +142,7 @@ GET /user
 ```json
 {
   "id": 1,
+  "username": "john_smith",
   "email": "john@example.com",
   "name": "John Smith",
   "blocked": false,

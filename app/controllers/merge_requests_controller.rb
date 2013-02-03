@@ -1,6 +1,6 @@
 class MergeRequestsController < ProjectResourceController
   before_filter :module_enabled
-  before_filter :merge_request, only: [:edit, :update, :destroy, :show, :commits, :diffs, :automerge, :automerge_check, :ci_status]
+  before_filter :merge_request, only: [:edit, :update, :show, :commits, :diffs, :automerge, :automerge_check, :ci_status]
   before_filter :validates_merge_request, only: [:show, :diffs]
   before_filter :define_show_vars, only: [:show, :diffs]
 
@@ -13,14 +13,14 @@ class MergeRequestsController < ProjectResourceController
   # Allow modify merge_request
   before_filter :authorize_modify_merge_request!, only: [:close, :edit, :update, :sort]
 
-  # Allow destroy merge_request
-  before_filter :authorize_admin_merge_request!, only: [:destroy]
-
   def index
     @merge_requests = MergeRequestsLoadContext.new(project, current_user, params).execute
   end
 
   def show
+    @target_type = :merge_request
+    @target_id = @merge_request.id
+
     respond_to do |format|
       format.html
       format.js
@@ -34,7 +34,9 @@ class MergeRequestsController < ProjectResourceController
     @diffs = @merge_request.diffs
     @commit = @merge_request.last_commit
 
-    @comments_allowed = true
+    @comments_allowed = @reply_allowed = true
+    @comments_target  = { noteable_type: 'MergeRequest',
+                          noteable_id: @merge_request.id }
     @line_notes = @merge_request.notes.where("line_code is not null")
   end
 
@@ -72,6 +74,8 @@ class MergeRequestsController < ProjectResourceController
       @merge_request.check_if_can_be_merged
     end
     render json: {state: @merge_request.human_state}
+  rescue Gitlab::SatelliteNotExistError
+    render json: {state: :no_satellite}
   end
 
   def automerge
@@ -85,21 +89,13 @@ class MergeRequestsController < ProjectResourceController
     end
   end
 
-  def destroy
-    @merge_request.destroy
-
-    respond_to do |format|
-      format.html { redirect_to project_merge_requests_url(@project) }
-    end
-  end
-
   def branch_from
-    @commit = project.commit(params[:ref])
+    @commit = @repository.commit(params[:ref])
     @commit = CommitDecorator.decorate(@commit)
   end
 
   def branch_to
-    @commit = project.commit(params[:ref])
+    @commit = @repository.commit(params[:ref])
     @commit = CommitDecorator.decorate(@commit)
   end
 

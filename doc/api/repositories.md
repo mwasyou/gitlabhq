@@ -8,7 +8,7 @@ GET /projects/:id/repository/branches
 
 Parameters:
 
-+ `id` (required) - The ID or code name of a project
++ `id` (required) - The ID of a project
 
 ```json
 [
@@ -33,7 +33,8 @@ Parameters:
       },
       "authored_date": "2012-06-27T05:51:39-07:00",
       "committed_date": "2012-06-28T03:44:20-07:00"
-    }
+    },
+    "protected": true
   }
 ]
 ```
@@ -48,7 +49,7 @@ GET /projects/:id/repository/branches/:branch
 
 Parameters:
 
-+ `id` (required) - The ID or code name of a project
++ `id` (required) - The ID of a project
 + `branch` (required) - The name of the branch
 
 ```json
@@ -73,7 +74,88 @@ Parameters:
     },
     "authored_date": "2012-06-27T05:51:39-07:00",
     "committed_date": "2012-06-28T03:44:20-07:00"
-  }
+  },
+  "protected": true
+}
+```
+
+## Protect a project repository branch
+
+Protect a single project repository branch.
+
+```
+PUT /projects/:id/repository/branches/:branch/protect
+```
+
+Parameters:
+
++ `id` (required) - The ID of a project
++ `branch` (required) - The name of the branch
+
+```json
+{
+  "name": "master",
+  "commit": {
+    "id": "7b5c3cc8be40ee161ae89a06bba6229da1032a0c",
+    "parents": [
+      {
+        "id": "4ad91d3c1144c406e50c7b33bae684bd6837faf8"
+      }
+    ],
+    "tree": "46e82de44b1061621357f24c05515327f2795a95",
+    "message": "add projects API",
+    "author": {
+      "name": "John Smith",
+      "email": "john@example.com"
+    },
+    "committer": {
+      "name": "John Smith",
+      "email": "john@example.com"
+    },
+    "authored_date": "2012-06-27T05:51:39-07:00",
+    "committed_date": "2012-06-28T03:44:20-07:00"
+  },
+  "protected": true
+}
+```
+
+## Unprotect a project repository branch
+
+Unprotect a single project repository branch.
+
+```
+PUT /projects/:id/repository/branches/:branch/unprotect
+```
+
+Parameters:
+
++ `id` (required) - The ID of a project
++ `branch` (required) - The name of the branch
+
+```json
+{
+  "name": "master",
+  "commit": {
+    "id": "7b5c3cc8be40ee161ae89a06bba6229da1032a0c",
+    "parents": [
+      {
+        "id": "4ad91d3c1144c406e50c7b33bae684bd6837faf8"
+      }
+    ],
+    "tree": "46e82de44b1061621357f24c05515327f2795a95",
+    "message": "add projects API",
+    "author": {
+      "name": "John Smith",
+      "email": "john@example.com"
+    },
+    "committer": {
+      "name": "John Smith",
+      "email": "john@example.com"
+    },
+    "authored_date": "2012-06-27T05:51:39-07:00",
+    "committed_date": "2012-06-28T03:44:20-07:00"
+  },
+  "protected": false
 }
 ```
 
@@ -87,7 +169,7 @@ GET /projects/:id/repository/tags
 
 Parameters:
 
-+ `id` (required) - The ID or code name of a project
++ `id` (required) - The ID of a project
 
 ```json
 [
@@ -110,7 +192,8 @@ Parameters:
       },
       "authored_date": "2012-05-28T04:42:42-07:00",
       "committed_date": "2012-05-28T04:42:42-07:00"
-    }
+    },
+    "protected": null
   }
 ]
 ```
@@ -125,7 +208,7 @@ GET /projects/:id/repository/commits
 
 Parameters:
 
-+ `id` (required) - The ID or code name of a project
++ `id` (required) - The ID of a project
 + `ref_name` (optional) - The name of a repository branch or tag
 
 ```json
@@ -159,7 +242,7 @@ GET /projects/:id/repository/commits/:sha/blob
 
 Parameters:
 
-+ `id` (required) - The ID or code name of a project
++ `id` (required) - The ID of a project
 + `sha` (required) - The commit or branch name
 + `filepath` (required) - The path the file
 

@@ -1,14 +1,19 @@
 class Notify < ActionMailer::Base
-  include Resque::Mailer
+
   add_template_helper ApplicationHelper
   add_template_helper GitlabMarkdownHelper
 
-  default_url_options[:host]     = Gitlab.config.web_host
-  default_url_options[:protocol] = Gitlab.config.web_protocol
-  default_url_options[:port]     = Gitlab.config.web_port if Gitlab.config.web_custom_port?
+  default_url_options[:host]     = Gitlab.config.gitlab.host
+  default_url_options[:protocol] = Gitlab.config.gitlab.protocol
+  default_url_options[:port]     = Gitlab.config.gitlab.port if Gitlab.config.gitlab_on_non_standard_port?
+  default_url_options[:script_name] = Gitlab.config.gitlab.relative_url_root
 
-  default from: Gitlab.config.email_from
+  default from: Gitlab.config.gitlab.email_from
 
+  # Just send email with 3 seconds delay
+  def self.delay
+    delay_for(2.seconds)
+  end
 
 
   #
@@ -31,6 +36,7 @@ class Notify < ActionMailer::Base
   def issue_status_changed_email(recipient_id, issue_id, status, updated_by_user_id)
     @issue = Issue.find issue_id
     @issue_status = status
+    @project = @issue.project
     @updated_by = User.find updated_by_user_id
     mail(to: recipient(recipient_id),
         subject: subject("changed issue ##{@issue.id}", @issue.title))
@@ -86,7 +92,7 @@ class Notify < ActionMailer::Base
   def note_wall_email(recipient_id, note_id)
     @note = Note.find(note_id)
     @project = @note.project
-    mail(to: recipient(recipient_id), subject: subject)
+    mail(to: recipient(recipient_id), subject: subject("note on wall"))
   end
 
 
@@ -102,6 +108,12 @@ class Notify < ActionMailer::Base
   end
 
 
+  def project_was_moved_email(user_project_id)
+    @users_project = UsersProject.find user_project_id
+    @project = @users_project.project
+    mail(to: @users_project.user.email,
+         subject: subject("project was moved"))
+  end
 
   #
   # User
@@ -140,12 +152,15 @@ class Notify < ActionMailer::Base
   #   >> @project = Project.last
   #   => #<Project id: 1, name: "Ruby on Rails", path: "ruby_on_rails", ...>
   #   >> subject('Lorem ipsum')
-  #   => "GitLab | Lorem ipsum | Ruby on Rails"
+  #   => "GitLab | Ruby on Rails | Lorem ipsum "
   #
   #   # Accepts multiple arguments
   #   >> subject('Lorem ipsum', 'Dolor sit amet')
   #   => "GitLab | Lorem ipsum | Dolor sit amet"
   def subject(*extra)
-    "GitLab | " << extra.join(' | ') << (@project ? " | #{@project.name}" : "")
+    subject = "GitLab"
+    subject << (@project ? " | #{@project.name_with_namespace}" : "")
+    subject << " | " + extra.join(' | ') if extra.present?
+    subject
   end
 end

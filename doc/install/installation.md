@@ -19,7 +19,7 @@ following the contribution guide (see `CONTRIBUTING.md`).
 
 # Overview
 
-The GitLab installation consists of setting up th following components:
+The GitLab installation consists of setting up the following components:
 
 1. Packages / Dependencies
 2. Ruby
@@ -36,7 +36,7 @@ The GitLab installation consists of setting up th following components:
 to install it first.
 
     # run as root
-    apt-get update && apt-get upgrade && apt-get install sudo vim
+    apt-get update && apt-get upgrade && apt-get install sudo
 
 Make sure your system is up-to-date:
 
@@ -52,7 +52,7 @@ edited by hand. But, you can use any editor you like instead.
 
 Install the required packages:
 
-    sudo apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev  wget curl git-core openssh-server redis-server postfix checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev
+    sudo apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl git-core openssh-server redis-server postfix checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev
 
 Make sure you have the right version of Python installed.
 
@@ -76,8 +76,8 @@ Make sure you have the right version of Python installed.
 
 Download and compile it:
 
-    wget http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p327.tar.gz
-    tar xfvz ruby-1.9.3-p327.tar.gz
+    mkdir /tmp/ruby && cd /tmp/ruby
+    curl --progress http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p327.tar.gz | tar xz
     cd ruby-1.9.3-p327
     ./configure
     make
@@ -117,7 +117,7 @@ Create a user for GitLab:
 Clone GitLab's fork of the Gitolite source code:
 
     cd /home/git
-    sudo -u git -H git clone -b gl-v304 https://github.com/gitlabhq/gitolite.git /home/git/gitolite
+    sudo -u git -H git clone -b gl-v320 https://github.com/gitlabhq/gitolite.git /home/git/gitolite
 
 Setup Gitolite with GitLab as its admin:
 
@@ -136,11 +136,26 @@ GitLab assumes *full and unshared* control over this Gitolite installation.
     # ... and use it as the admin key for the Gitolite setup
     sudo -u git -H sh -c "PATH=/home/git/bin:$PATH; gitolite setup -pk /home/git/gitlab.pub"
 
+Fix the directory permissions for the configuration directory:
+
+    # Make sure the Gitolite config dir is owned by git
+    sudo chmod 750 /home/git/.gitolite/
+    sudo chown -R git:git /home/git/.gitolite/
+
 Fix the directory permissions for the repositories:
 
     # Make sure the repositories dir is owned by git and it stays that way
-    sudo chmod -R ug+rwXs,o-rwx /home/git/repositories/
+    sudo chmod -R ug+rwX,o-rwx /home/git/repositories/
     sudo chown -R git:git /home/git/repositories/
+    find /home/git/repositories -type d -print0 | sudo xargs -0 chmod g+s
+
+
+## Add domains to list to the list of known hosts
+
+    sudo -u gitlab -H ssh git@localhost
+    sudo -u gitlab -H ssh git@YOUR_DOMAIN_NAME
+    sudo -u gitlab -H ssh git@YOUR_GITOLITE_DOMAIN_NAME
+
 
 ## Test if everything works so far
 
@@ -169,11 +184,17 @@ See `doc/install/databases.md`
 
 ## Clone the Source
 
-    # Clone the latest stable release
-    sudo -u gitlab -H git clone -b stable https://github.com/gitlabhq/gitlabhq.git gitlab
+    # Clone GitLab repository
+    sudo -u gitlab -H git clone https://github.com/gitlabhq/gitlabhq.git gitlab
+
+    # Go to gitlab dir 
+    cd /home/gitlab/gitlab
+   
+    # Checkout to stable release
+    sudo -u gitlab -H git checkout 4-1-stable
 
 **Note:**
-You can change `stable` to `master` if you want the *bleeding edge* version, but
+You can change `4-1-stable` to `master` if you want the *bleeding edge* version, but
 do so with caution!
 
 ## Configure it
@@ -193,18 +214,36 @@ do so with caution!
     sudo chmod -R u+rwX  log/
     sudo chmod -R u+rwX  tmp/
 
+    # Make directory for satellites
+    sudo -u gitlab -H mkdir /home/gitlab/gitlab-satellites
+
     # Copy the example Unicorn config
     sudo -u gitlab -H cp config/unicorn.rb.example config/unicorn.rb
 
 **Important Note:**
 Make sure to edit both files to match your setup.
 
+## Configure GitLab DB settings
+
+    # Mysql
+    sudo -u gitlab cp config/database.yml.mysql config/database.yml
+
+    # PostgreSQL
+    sudo -u gitlab cp config/database.yml.postgresql config/database.yml
+
+Make sure to update username/password in config/database.yml.
+
 ## Install Gems
 
     cd /home/gitlab/gitlab
 
     sudo gem install charlock_holmes --version '0.6.9'
-    sudo -u gitlab -H bundle install --deployment --without development test 
+
+    # For MySQL (note, the option says "without")
+    sudo -u gitlab -H bundle install --deployment --without development test postgres
+
+    # Or for PostgreSQL
+    sudo -u gitlab -H bundle install --deployment --without development test mysql
 
 ## Configure Git
 
@@ -222,7 +261,19 @@ used for the `email.from` setting in `config/gitlab.yml`)
 
 ## Initialise Database and Activate Advanced Features
 
-    sudo -u gitlab -H bundle exec rake gitlab:app:setup RAILS_ENV=production
+    sudo -u gitlab -H bundle exec rake gitlab:setup RAILS_ENV=production
+
+
+## Install Init Script
+
+Download the init script (will be /etc/init.d/gitlab):
+
+    sudo curl --output /etc/init.d/gitlab https://raw.github.com/gitlabhq/gitlab-recipes/master/init.d/gitlab
+    sudo chmod +x /etc/init.d/gitlab
+
+Make GitLab start on boot:
+
+    sudo update-rc.d gitlab defaults 21
 
 
 ## Check Application Status
@@ -235,23 +286,10 @@ To make sure you didn't miss anything run a more thorough check with:
 
     sudo -u gitlab -H bundle exec rake gitlab:check RAILS_ENV=production
 
-If you are all green: congratulations, you successfully installed GitLab!
-Although this is the case, there are still a few steps to go.
+If all items are green, then congratulations on successfully installing GitLab!
+However there are still a few steps left.
 
-
-## Install Init Script
-
-Download the init script (will be /etc/init.d/gitlab):
-
-    sudo wget https://raw.github.com/gitlabhq/gitlab-recipes/master/init.d/gitlab -P /etc/init.d/
-    sudo chmod +x /etc/init.d/gitlab
-
-Make GitLab start on boot:
-
-    sudo update-rc.d gitlab defaults 21
-
-
-Start your GitLab instance:
+## Start Your GitLab Instance
 
     sudo service gitlab start
     # or
@@ -271,7 +309,7 @@ If you can't or don't want to use Nginx as your web server, have a look at the
 
 Download an example site config:
 
-    sudo wget https://raw.github.com/gitlabhq/gitlab-recipes/master/nginx/gitlab -P /etc/nginx/sites-available/
+    sudo curl --output /etc/nginx/sites-available/gitlab https://raw.github.com/gitlabhq/gitlab-recipes/master/nginx/gitlab
     sudo ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/gitlab
 
 Make sure to edit the config file to match your setup:
@@ -315,6 +353,17 @@ a different host, you can configure its connection string via the
     # example
     production: redis.example.tld:6379
 
+## Custom SSH Connection
+
+If you are running SSH on a non-standard port, you must change the gitlab user'S SSH config.
+    
+    # Add to /home/gitlab/.ssh/config
+    host localhost          # Give your setup a name (here: override localhost)
+        user git            # Your remote git user
+        port 2222           # Your port number
+        hostname 127.0.0.1; # Your server name or IP
+
+You also need to change the corresponding options (e.g. ssh_user, ssh_host, admin_uri) in the `config\gitlab.yml` file.
 
 ## User-contributed Configurations
 

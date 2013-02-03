@@ -9,14 +9,14 @@ module Gitlab
       # Example Request:
       #   GET /projects
       get do
-        @projects = paginate current_user.projects
+        @projects = paginate current_user.authorized_projects
         present @projects, with: Entities::Project
       end
 
       # Get a single project
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       # Example Request:
       #   GET /projects/:id
       get ":id" do
@@ -27,8 +27,6 @@ module Gitlab
       #
       # Parameters:
       #   name (required) - name for new project
-      #   code (optional) - code for new project, uses project name if not set
-      #   path (optional) - path for new project, uses project name if not set
       #   description (optional) - short project description
       #   default_branch (optional) - 'master' by default
       #   issues_enabled (optional) - enabled by default
@@ -45,7 +43,7 @@ module Gitlab
                                     :wall_enabled,
                                     :merge_requests_enabled,
                                     :wiki_enabled]
-        @project = Project.create_by_user(attrs, current_user)
+        @project = ::Projects::CreateContext.new(current_user, attrs).execute
         if @project.saved?
           present @project, with: Entities::Project
         else
@@ -56,18 +54,23 @@ module Gitlab
       # Get a project team members
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
+      #   query         - Query string
       # Example Request:
       #   GET /projects/:id/members
       get ":id/members" do
-        @members = paginate user_project.users
+        if params[:query].present?
+          @members = paginate user_project.users.where("username LIKE ?", "%#{params[:query]}%")
+        else
+          @members = paginate user_project.users
+        end
         present @members, with: Entities::ProjectMember, project: user_project
       end
 
       # Get a project team members
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   user_id (required) - The ID of a user
       # Example Request:
       #   GET /projects/:id/members/:user_id
@@ -79,7 +82,7 @@ module Gitlab
       # Add a new project team member
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   user_id (required) - The ID of a user
       #   access_level (required) - Project access level
       # Example Request:
@@ -102,7 +105,7 @@ module Gitlab
       # Update project team member
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   user_id (required) - The ID of a team member
       #   access_level (required) - Project access level
       # Example Request:
@@ -122,7 +125,7 @@ module Gitlab
       # Remove a team member from project
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   user_id (required) - The ID of a team member
       # Example Request:
       #   DELETE /projects/:id/members/:user_id
@@ -135,7 +138,7 @@ module Gitlab
       # Get project hooks
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       # Example Request:
       #   GET /projects/:id/hooks
       get ":id/hooks" do
@@ -147,7 +150,7 @@ module Gitlab
       # Get a project hook
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   hook_id (required) - The ID of a project hook
       # Example Request:
       #   GET /projects/:id/hooks/:hook_id
@@ -160,7 +163,7 @@ module Gitlab
       # Add hook to project
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   url (required) - The hook URL
       # Example Request:
       #   POST /projects/:id/hooks
@@ -177,7 +180,7 @@ module Gitlab
       # Update an existing project hook
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   hook_id (required) - The ID of a project hook
       #   url (required) - The hook URL
       # Example Request:
@@ -198,7 +201,7 @@ module Gitlab
       # Delete project hook
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   hook_id (required) - The ID of hook to delete
       # Example Request:
       #   DELETE /projects/:id/hooks
@@ -211,29 +214,65 @@ module Gitlab
       # Get a project repository branches
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       # Example Request:
       #   GET /projects/:id/repository/branches
       get ":id/repository/branches" do
-        present user_project.repo.heads.sort_by(&:name), with: Entities::RepoObject
+        present user_project.repo.heads.sort_by(&:name), with: Entities::RepoObject, project: user_project
       end
 
       # Get a single branch
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   branch (required) - The name of the branch
       # Example Request:
       #   GET /projects/:id/repository/branches/:branch
       get ":id/repository/branches/:branch" do
         @branch = user_project.repo.heads.find { |item| item.name == params[:branch] }
-        present @branch, with: Entities::RepoObject
+        present @branch, with: Entities::RepoObject, project: user_project
+      end
+
+      # Protect a single branch
+      #
+      # Parameters:
+      #   id (required) - The ID of a project
+      #   branch (required) - The name of the branch
+      # Example Request:
+      #   PUT /projects/:id/repository/branches/:branch/protect
+      put ":id/repository/branches/:branch/protect" do
+        @branch = user_project.repo.heads.find { |item| item.name == params[:branch] }
+        protected = user_project.protected_branches.find_by_name(@branch.name)
+
+        unless protected
+          user_project.protected_branches.create(:name => @branch.name)
+        end
+
+        present @branch, with: Entities::RepoObject, project: user_project
+      end
+
+      # Unprotect a single branch
+      #
+      # Parameters:
+      #   id (required) - The ID of a project
+      #   branch (required) - The name of the branch
+      # Example Request:
+      #   PUT /projects/:id/repository/branches/:branch/unprotect
+      put ":id/repository/branches/:branch/unprotect" do
+        @branch = user_project.repo.heads.find { |item| item.name == params[:branch] }
+        protected = user_project.protected_branches.find_by_name(@branch.name)
+
+        if protected
+          protected.destroy
+        end
+
+        present @branch, with: Entities::RepoObject, project: user_project
       end
 
       # Get a project repository tags
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       # Example Request:
       #   GET /projects/:id/repository/tags
       get ":id/repository/tags" do
@@ -243,7 +282,7 @@ module Gitlab
       # Get a project repository commits
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   ref_name (optional) - The name of a repository branch or tag
       # Example Request:
       #   GET /projects/:id/repository/commits
@@ -254,14 +293,14 @@ module Gitlab
         per_page = params[:per_page] || 20
         ref = params[:ref_name] || user_project.try(:default_branch) || 'master'
 
-        commits = user_project.commits(ref, nil, per_page, page * per_page)
+        commits = user_project.repository.commits(ref, nil, per_page, page * per_page)
         present CommitDecorator.decorate(commits), with: Entities::RepoCommit
       end
 
       # Get a project snippets
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       # Example Request:
       #   GET /projects/:id/snippets
       get ":id/snippets" do
@@ -271,7 +310,7 @@ module Gitlab
       # Get a project snippet
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   snippet_id (required) - The ID of a project snippet
       # Example Request:
       #   GET /projects/:id/snippets/:snippet_id
@@ -283,7 +322,7 @@ module Gitlab
       # Create a new project snippet
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   title (required) - The title of a snippet
       #   file_name (required) - The name of a snippet file
       #   lifetime (optional) - The expiration date of a snippet
@@ -309,7 +348,7 @@ module Gitlab
       # Update an existing project snippet
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   snippet_id (required) - The ID of a project snippet
       #   title (optional) - The title of a snippet
       #   file_name (optional) - The name of a snippet file
@@ -335,7 +374,7 @@ module Gitlab
       # Delete a project snippet
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   snippet_id (required) - The ID of a project snippet
       # Example Request:
       #   DELETE /projects/:id/snippets/:snippet_id
@@ -349,7 +388,7 @@ module Gitlab
       # Get a raw project snippet
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   snippet_id (required) - The ID of a project snippet
       # Example Request:
       #   GET /projects/:id/snippets/:snippet_id/raw
@@ -362,7 +401,7 @@ module Gitlab
       # Get a raw file contents
       #
       # Parameters:
-      #   id (required) - The ID or code name of a project
+      #   id (required) - The ID of a project
       #   sha (required) - The commit or branch name
       #   filepath (required) - The path to the file to display
       # Example Request:
@@ -372,10 +411,10 @@ module Gitlab
 
         ref = params[:sha]
 
-        commit = user_project.commit ref
+        commit = user_project.repository.commit ref
         not_found! "Commit" unless commit
 
-        tree = Tree.new commit.tree, user_project, ref, params[:filepath]
+        tree = Tree.new commit.tree, ref, params[:filepath]
         not_found! "File" unless tree.try(:tree)
 
         content_type tree.mime_type

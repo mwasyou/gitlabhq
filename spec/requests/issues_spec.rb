@@ -7,11 +7,10 @@ describe "Issues" do
     login_as :user
     user2 = create(:user)
 
-    project.add_access(@user, :read, :write)
-    project.add_access(user2, :read, :write)
+    project.team << [[@user, user2], :developer]
   end
 
-  describe "Edit issue", js: true do
+  describe "Edit issue" do
     let!(:issue) do
       create(:issue,
              author: @user,
@@ -91,13 +90,13 @@ describe "Issues" do
                title: title)
       end
 
-      issue = Issue.first # with title 'foobar'
-      issue.milestone = create(:milestone, project: project)
-      issue.assignee = nil
-      issue.save
+      @issue = Issue.first # with title 'foobar'
+      @issue.milestone = create(:milestone, project: project)
+      @issue.assignee = nil
+      @issue.save
     end
 
-    let(:issue) { Issue.first }
+    let(:issue) { @issue }
 
     it "should allow filtering by issues with no specified milestone" do
       visit project_issues_path(project, milestone_id: '0')

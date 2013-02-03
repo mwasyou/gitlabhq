@@ -1,9 +1,13 @@
+require 'simplecov' unless ENV['CI']
+
 ENV['RAILS_ENV'] = 'test'
 require './config/environment'
 
 require 'rspec'
 require 'database_cleaner'
 require 'spinach/capybara'
+require 'sidekiq/testing/inline'
+
 
 %w(gitolite_stub stubbed_repository valid_commit).each do |f|
   require Rails.root.join('spec', 'support', f)
@@ -17,7 +21,6 @@ Dir["#{Rails.root}/features/steps/shared/*.rb"].each {|file| require file}
 include GitoliteStub
 
 WebMock.allow_net_connect!
-
 #
 # JS driver
 #
@@ -33,11 +36,9 @@ DatabaseCleaner.strategy = :truncation
 
 Spinach.hooks.before_scenario do
   # Use tmp dir for FS manipulations
-  Gitlab.config.stub(git_base_path: Rails.root.join('tmp', 'test-git-base-path'))
-  FileUtils.rm_rf Gitlab.config.git_base_path
-  FileUtils.mkdir_p Gitlab.config.git_base_path
-
-  DatabaseCleaner.start
+  Gitlab.config.gitolite.stub(repos_path: Rails.root.join('tmp', 'test-git-base-path'))
+  FileUtils.rm_rf Gitlab.config.gitolite.repos_path
+  FileUtils.mkdir_p Gitlab.config.gitolite.repos_path
 end
 
 Spinach.hooks.after_scenario do

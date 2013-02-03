@@ -3,6 +3,7 @@ require 'rake'
 
 describe 'gitlab:app namespace rake task' do
   before :all do
+    Rake.application.rake_require "tasks/gitlab/task_helpers"
     Rake.application.rake_require "tasks/gitlab/backup"
     # empty task as env is already loaded
     Rake::Task.define_task :environment
@@ -15,8 +16,8 @@ describe 'gitlab:app namespace rake task' do
     end
 
     let :run_rake_task do
-      Rake::Task["gitlab:app:backup_restore"].reenable
-      Rake.application.invoke_task "gitlab:app:backup_restore"
+      Rake::Task["gitlab:backup:restore"].reenable
+      Rake.application.invoke_task "gitlab:backup:restore"
     end
 
     context 'gitlab version' do
@@ -36,8 +37,8 @@ describe 'gitlab:app namespace rake task' do
 
       it 'should invoke restoration on mach' do
         YAML.stub :load_file => {:gitlab_version => gitlab_version}
-        Rake::Task["gitlab:app:db_restore"].should_receive :invoke
-        Rake::Task["gitlab:app:repo_restore"].should_receive :invoke
+        Rake::Task["gitlab:backup:db:restore"].should_receive :invoke
+        Rake::Task["gitlab:backup:repo:restore"].should_receive :invoke
         expect { run_rake_task }.to_not raise_error SystemExit
       end
     end

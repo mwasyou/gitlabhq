@@ -1,3 +1,7 @@
+html {
+  overflow-y: scroll;
+}
+
 /** LAYOUT **/
 
 body {
@@ -13,20 +17,12 @@ body {
   margin: 0 0;
 }
 
-.container  .sidebar {
-  width: 200px;
-  height: 100%;
-  min-height: 450px;
-  float: right;
-}
-
-
 .visible_link,
 .author_link {
   color: $link_color;
 }
 
-.help li { color:#111 }
+.help li { color:$style_color; }
 
 .back_link {
   text-decoration: underline;
@@ -65,6 +61,9 @@ table a code {
   background: url(ajax_loader.gif) no-repeat center center;
   width: 40px;
   height: 40px;
+  &.loading-gray {
+    background: url(ajax_loader_gray.gif) no-repeat center center;
+  }
 }
 
 /** FLASH message **/
@@ -96,28 +95,17 @@ table a code {
   margin-right:50px
 }
 
-.handle:hover {
-  cursor: move;
-}
-
 span.update-author {
   display: block;
-}
-span.update-author {
   color: #999;
   font-weight: normal;
   font-style: italic;
-}
-span.update-author strong {
-  font-weight: bold;
-  font-style: normal;
+  strong {
+    font-weight: bold;
+    font-style: normal;
+  }
 }
 
-/** UPDATE ITEM **/
-span.update-author {
-  display: block;
-}
-/** END UPDATE ITEM **/
 .dashboard-loader {
   float: left;
   margin: 10px;
@@ -133,34 +121,10 @@ span.update-author {
 }
 
 .label {
-  background-color: #474D57;
-
-  &.label-tag {
-    background: none;
-    border: none;
-    padding: 4px 6px;
-    color: #444;
-    text-shadow: 0 0 1px #fff;
-
-    &.grouped {
-      float: left;
-      margin-right: 6px;
-      padding: 6px;
-    }
-  }
-  &.label-issue {
-    background-color: #eee;
-    border: 1px solid #ccc;
-    padding: 4px 6px;
-    color: #444;
-    text-shadow: 0 0 1px #fff;
-
-    &.grouped {
-      float: left;
-      margin-right: 6px;
-      padding: 6px;
-    }
-  }
+  padding: 0px 4px;
+  font-size: 10px;
+  font-style: normal;
+  background-color: $link_color;
 
   &.label-success {
     background-color: #8D8;
@@ -264,21 +228,6 @@ input.git_clone_url {
 }
 
 
-/** bordered list **/
-ul.bordered-list {
-  margin: 5px 0px;
-  padding: 0px;
-  li {
-    padding: 5px 0;
-    border-bottom: 1px solid #EEE;
-    overflow: hidden;
-    display: block;
-    margin: 0px;
-  }
-}
-
-ul.bordered-list li:last-child { border:none }
-
 .line_holder {
   &:hover {
     td {
@@ -316,98 +265,6 @@ p.time {
 }
 
 
-.ico {
-  background: url("images.png") no-repeat -85px -77px;
-  width: 19px;
-  height: 16px;
-  float: left;
-  position: relative;
-  margin-right: 10px;
-  top: 8px;
-
-  &.project {
-    background-position:  -37px -77px;
-  }
-
-  &.activities {
-    background-position:-162px -22px;
-  }
-  &.projects {
-    background-position:-209px -21px;
-  }
-}
-
-.leftbar {
-  h5, .title {
-    padding: 5px 10px;
-  }
-
-  h4 {
-    font-size: 14px;
-    padding: 2px 10px;
-    color: #666;
-    border-bottom: 1px solid #f1f1f1;
-  }
-  a:last-child h4 { border: none; }
-
-  a:hover {
-    h4 {
-      color: #111;
-      background: $hover;
-      border-color: #CCC;
-      .ico.project {
-        background-position:-209px -21px;
-      }
-    }
-  }
-  .bottom {
-    padding: 10px;
-  }
-}
-
-.votes {
-  font-size: 13px;
-  line-height: 15px;
-  .progress {
-    height: 4px;
-    margin: 0;
-    .bar {
-      float: left;
-      height: 100%;
-    }
-    .bar-success {
-      @include linear-gradient(#62C462, #51A351);
-      background-color: #468847;
-    }
-    .bar-danger {
-      @include linear-gradient(#EE5F5B, #BD362F);
-      background-color: #B94A48;
-    }
-  }
-  .upvotes {
-    display: inline-block;
-    color: #468847;
-  }
-  .downvotes {
-    display: inline-block;
-    color: #B94A48;
-  }
-}
-.votes-block {
-  margin: 14px 6px 6px 0;
-  .downvotes {
-    float: right;
-  }
-}
-.votes-inline {
-  display: inline-block;
-  margin: 0 8px;
-  .progress {
-    display: inline-block;
-    padding: 0 0 2px;
-    width: 45px;
-  }
-}
 
 /* Fix for readme code (stopped it from being yellow) */
 .readme {
@@ -420,27 +277,35 @@ p.time {
   }
 }
 
+.search-holder {
+  label, input {
+     height: 30px;
+     padding: 0;
+     font-size: 14px;
+  }
+  label {
+    line-height: 30px;
+    color: #666;
+  }
+}
 
 .highlight_word {
-  background: #EEDC94;
+  border-bottom: 2px solid #F90;
 }
 
 .status_info {
-  font-size: 18px;
+  font-size: 14px;
   padding: 5px 15px;
-  line-height: 48px;
+  line-height: 26px;
   text-align: center;
   float: right;
   position: relative;
-  top: -15px;
-  left: 15px;
-  background: #F5F5F5;
+  top: -5px;
+  @include border-radius(4px);
 
-  &.success {
-  }
   &.error {
-    color: #C32;
-    border-bottom: 5px solid #C32;
+    background: #DA4E49;
+    color: #FFF;
   }
 }
 
@@ -459,16 +324,6 @@ p.time {
   height: 150px;
 }
 
-.gitlab_pagination {
-  span a { color: $link_color; }
-  .prev, .next, .current, .page a {
-    padding: 10px;
-  }
-  .current {
-    border-bottom: 2px solid $style_color;
-  }
-}
-
 // Fixes alignment on notes.
 .new_note {
   label {
@@ -482,10 +337,6 @@ li.note {
   .note-title {
     li {
       border-bottom:none !important;
-    }
-    .file {
-      padding-left: 20px;
-      background:url("icon-attachment.png") no-repeat left center;
     }
   }
 }
@@ -532,6 +383,7 @@ li.note {
         font-size: 48px;
         padding: 20px;
         text-align: center;
+        font-weight: normal;
       }
     }
   }
@@ -562,7 +414,7 @@ li.note {
 
 
 .supp_diff_link,
-.mr_show_all_commits {
+.show-all-commits {
   cursor: pointer;
 }
 
@@ -599,6 +451,19 @@ li.note {
   padding: 10px;
   margin-bottom: 10px;
   background: #FEE;
+  padding-left: 20px;
+
+  &.centered {
+    text-align: center;
+  }
+}
+
+.warning_message {
+  border-left: 4px solid #ed9;
+  color: #b90;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #ffffe6;
   padding-left: 20px;
 
   &.centered {
@@ -643,9 +508,14 @@ pre {
   }
 }
 
-.milestone .progress {
-  margin-bottom: 0;
-  margin-top: 4px;
+.milestone {
+  &.milestone-closed {
+    background: #eee;
+  }
+  .progress {
+    margin-bottom: 0;
+    margin-top: 4px;
+  }
 }
 
 .float-link {
@@ -687,4 +557,10 @@ h1.http_status_code {
       }
     }
   }
+}
+
+img.emoji {
+  height: 20px;
+  vertical-align: middle;
+  width: 20px;
 }

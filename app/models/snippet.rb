@@ -22,13 +22,13 @@ class Snippet < ActiveRecord::Base
   belongs_to :author, class_name: "User"
   has_many :notes, as: :noteable, dependent: :destroy
 
-  delegate :name, :email, to: :author, prefix: true
+  delegate :name, :email, to: :author, prefix: true, allow_nil: true
 
   validates :author, presence: true
   validates :project, presence: true
   validates :title, presence: true, length: { within: 0..255 }
   validates :file_name, presence: true, length: { within: 0..255 }
-  validates :content, presence: true, length: { within: 0..10000 }
+  validates :content, presence: true
 
   # Scopes
   scope :fresh, order("created_at DESC")

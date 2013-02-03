@@ -76,7 +76,7 @@ describe ProjectsController, "routing" do
   end
 
   it "to #graph" do
-    get("/gitlabhq/graph").should route_to('projects#graph', id: 'gitlabhq')
+    get("/gitlabhq/graph/master").should route_to('graph#show', project_id: 'gitlabhq', id: 'master')
   end
 
   it "to #files" do
@@ -191,17 +191,17 @@ describe ProtectedBranchesController, "routing" do
   end
 end
 
-#    switch_project_refs GET    /:project_id/switch(.:format)              refs#switch
-#  logs_tree_project_ref GET    /:project_id/:id/logs_tree(.:format)       refs#logs_tree
-#  logs_file_project_ref GET    /:project_id/:id/logs_tree/:path(.:format) refs#logs_tree
+#    switch_project_refs GET    /:project_id/refs/switch(.:format)              refs#switch
+#  logs_tree_project_ref GET    /:project_id/refs/:id/logs_tree(.:format)       refs#logs_tree
+#  logs_file_project_ref GET    /:project_id/refs/:id/logs_tree/:path(.:format) refs#logs_tree
 describe RefsController, "routing" do
   it "to #switch" do
-    get("/gitlabhq/switch").should route_to('refs#switch', project_id: 'gitlabhq')
+    get("/gitlabhq/refs/switch").should route_to('refs#switch', project_id: 'gitlabhq')
   end
 
   it "to #logs_tree" do
-    get("/gitlabhq/stable/logs_tree").should             route_to('refs#logs_tree', project_id: 'gitlabhq', id: 'stable')
-    get("/gitlabhq/stable/logs_tree/foo/bar/baz").should route_to('refs#logs_tree', project_id: 'gitlabhq', id: 'stable', path: 'foo/bar/baz')
+    get("/gitlabhq/refs/stable/logs_tree").should             route_to('refs#logs_tree', project_id: 'gitlabhq', id: 'stable')
+    get("/gitlabhq/refs/stable/logs_tree/foo/bar/baz").should route_to('refs#logs_tree', project_id: 'gitlabhq', id: 'stable', path: 'foo/bar/baz')
   end
 end
 
@@ -245,6 +245,7 @@ describe MergeRequestsController, "routing" do
 
   it_behaves_like "RESTful project resources" do
     let(:controller) { 'merge_requests' }
+    let(:actions) { [:index, :create, :new, :edit, :show, :update] }
   end
 end
 
@@ -325,6 +326,7 @@ end
 describe MilestonesController, "routing" do
   it_behaves_like "RESTful project resources" do
     let(:controller) { 'milestones' }
+    let(:actions) { [:index, :create, :new, :edit, :show, :update] }
   end
 end
 
@@ -360,6 +362,7 @@ describe IssuesController, "routing" do
 
   it_behaves_like "RESTful project resources" do
     let(:controller) { 'issues' }
+    let(:actions) { [:index, :create, :new, :edit, :show, :update] }
   end
 end
 
