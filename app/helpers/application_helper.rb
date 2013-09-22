@@ -2,6 +2,24 @@ require 'digest/md5'
 require 'uri'
 
 module ApplicationHelper
+  COLOR_SCHEMES = {
+    1 => 'white',
+    2 => 'dark',
+    3 => 'solarized-dark',
+    4 => 'monokai',
+  }
+  COLOR_SCHEMES.default = 'white'
+
+  # Helper method to access the COLOR_SCHEMES
+  #
+  # The keys are the `color_scheme_ids`
+  # The values are the `name` of the scheme.
+  #
+  # The preview images are `name-scheme-preview.png`
+  # The stylesheets should use the css class `.name`
+  def color_schemes
+    COLOR_SCHEMES.freeze
+  end
 
   # Check if a particular controller is the current one
   #
@@ -17,7 +35,7 @@ module ApplicationHelper
     args.any? { |v| v.to_s.downcase == controller.controller_name }
   end
 
-  # Check if a partcular action is the current one
+  # Check if a particular action is the current one
   #
   # args - One or more action names to check
   #
@@ -37,7 +55,7 @@ module ApplicationHelper
     if !Gitlab.config.gravatar.enabled || user_email.blank?
       'no_avatar.png'
     else
-      gravatar_url = request.ssl? ? Gitlab.config.gravatar.ssl_url : Gitlab.config.gravatar.plain_url
+      gravatar_url = request.ssl? || gitlab_config.https ? Gitlab.config.gravatar.ssl_url : Gitlab.config.gravatar.plain_url
       user_email.strip!
       sprintf gravatar_url, hash: Digest::MD5.hexdigest(user_email.downcase), size: size
     end
@@ -72,13 +90,12 @@ module ApplicationHelper
   end
 
   def search_autocomplete_source
-    projects = current_user.authorized_projects.map { |p| { label: "project: #{p.name_with_namespace}", url: project_path(p) } }
-    groups = current_user.authorized_groups.map { |group| { label: "group: #{group.name}", url: group_path(group) } }
-    teams = current_user.authorized_teams.map { |team| { label: "team: #{team.name}", url: team_path(team) } }
+    projects = current_user.authorized_projects.map { |p| { label: "project: #{simple_sanitize(p.name_with_namespace)}", url: project_path(p) } }
+    groups = current_user.authorized_groups.map { |group| { label: "group: #{simple_sanitize(group.name)}", url: group_path(group) } }
 
     default_nav = [
       { label: "My Profile", url: profile_path },
-      { label: "My SSH Keys", url: keys_path },
+      { label: "My SSH Keys", url: profile_keys_path },
       { label: "My Dashboard", url: root_path },
       { label: "Admin Section", url: admin_root_path },
     ]
@@ -96,17 +113,19 @@ module ApplicationHelper
     ]
 
     project_nav = []
-    if @project && @project.repository && @project.repository.root_ref
+    if @project && @project.repository.exists? && @project.repository.root_ref
       project_nav = [
-        { label: "#{@project.name_with_namespace} - Issues",   url: project_issues_path(@project) },
-        { label: "#{@project.name_with_namespace} - Commits",  url: project_commits_path(@project, @ref || @project.repository.root_ref) },
-        { label: "#{@project.name_with_namespace} - Merge Requests", url: project_merge_requests_path(@project) },
-        { label: "#{@project.name_with_namespace} - Milestones", url: project_milestones_path(@project) },
-        { label: "#{@project.name_with_namespace} - Snippets", url: project_snippets_path(@project) },
-        { label: "#{@project.name_with_namespace} - Team",     url: project_team_index_path(@project) },
-        { label: "#{@project.name_with_namespace} - Tree",     url: project_tree_path(@project, @ref || @project.repository.root_ref) },
-        { label: "#{@project.name_with_namespace} - Wall",     url: wall_project_path(@project) },
-        { label: "#{@project.name_with_namespace} - Wiki",     url: project_wikis_path(@project) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Files",    url: project_tree_path(@project, @ref || @project.repository.root_ref) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Commits",  url: project_commits_path(@project, @ref || @project.repository.root_ref) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Network",  url: project_network_path(@project, @ref || @project.repository.root_ref) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Graph",    url: project_graph_path(@project, @ref || @project.repository.root_ref) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Issues",   url: project_issues_path(@project) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Merge Requests", url: project_merge_requests_path(@project) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Milestones", url: project_milestones_path(@project) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Snippets", url: project_snippets_path(@project) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Team",     url: project_team_index_path(@project) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Wall",     url: project_wall_path(@project) },
+        { label: "#{simple_sanitize(@project.name_with_namespace)} - Wiki",     url: project_wikis_path(@project) },
       ]
     end
 
@@ -119,25 +138,29 @@ module ApplicationHelper
     Emoji.names.to_s
   end
 
-  def ldap_enable?
-    Devise.omniauth_providers.include?(:ldap)
-  end
-
   def app_theme
     Gitlab::Theme.css_class_by_id(current_user.try(:theme_id))
   end
 
   def user_color_scheme_class
-    current_user.dark_scheme ? :black : :white
+    COLOR_SCHEMES[current_user.try(:color_scheme_id)] if defined?(current_user)
   end
 
+  # Define whenever show last push event
+  # with suggestion to create MR
   def show_last_push_widget?(event)
-    event &&
-      event.last_push_to_non_root? &&
-      !event.rm_ref? &&
-      event.project &&
-      event.project.repository &&
-      event.project.merge_requests_enabled
+    # Skip if event is not about added or modified non-master branch
+    return false unless event && event.last_push_to_non_root? && !event.rm_ref?
+
+    project = event.project
+
+    # Skip if project repo is empty or MR disabled
+    return false unless project && !project.empty_repo? && project.merge_requests_enabled
+
+    # Skip if user already created appropriate MR
+    return false if project.merge_requests.where(source_branch: event.branch_name).opened.any?
+
+    true
   end
 
   def hexdigest(string)
@@ -145,9 +168,8 @@ module ApplicationHelper
   end
 
   def project_last_activity project
-    activity = project.last_activity
-    if activity && activity.created_at
-      time_ago_in_words(activity.created_at) + " ago"
+    if project.last_activity_at
+      time_ago_in_words(project.last_activity_at) + " ago"
     else
       "Never"
     end
@@ -159,8 +181,65 @@ module ApplicationHelper
               alt: "Sign in with #{provider.to_s.titleize}")
   end
 
-  def image_url(source)
-    root_url + path_to_image(source)
+  def simple_sanitize str
+    sanitize(str, tags: %w(a span))
   end
+
+  def image_url(source)
+    # prevent relative_root_path being added twice (it's part of root_url and path_to_image)
+    root_url.sub(/#{root_path}$/, path_to_image(source))
+  end
+
   alias_method :url_to_image, :image_url
+
+  def users_select_tag(id, opts = {})
+    css_class = "ajax-users-select "
+    css_class << "multiselect " if opts[:multiple]
+    css_class << (opts[:class] || '')
+    value = opts[:selected] || ''
+
+    hidden_field_tag(id, value, class: css_class)
+  end
+
+  def body_data_page
+    path = controller.controller_path.split('/')
+    namespace = path.first if path.second
+
+    [namespace, controller.controller_name, controller.action_name].compact.join(":")
+  end
+
+  # shortcut for gitlab config
+  def gitlab_config
+    Gitlab.config.gitlab
+  end
+
+  # shortcut for gitlab extra config
+  def extra_config
+    Gitlab.config.extra
+  end
+
+  def public_icon
+    content_tag :i, nil, class: 'icon-globe cblue'
+  end
+
+  def private_icon
+    content_tag :i, nil, class: 'icon-lock cgreen'
+  end
+
+  def search_placeholder
+    if @project && @project.persisted?
+      "Search in this project"
+    elsif @group && @group.persisted?
+      "Search in this group"
+    else
+      "Search"
+    end
+  end
+
+  def first_line(str)
+    lines = str.split("\n")
+    line = lines.first
+    line += "..." if lines.size > 1
+    line
+  end
 end

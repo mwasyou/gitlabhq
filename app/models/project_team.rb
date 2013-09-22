@@ -21,8 +21,26 @@ class ProjectTeam
     end
   end
 
-  def get_tm user_id
-    project.users_projects.find_by_user_id(user_id)
+  def find(user_id)
+    user = project.users.find_by_id(user_id)
+
+    if group
+      user ||= group.users.find_by_id(user_id)
+    end
+
+    user
+  end
+
+  def find_tm(user_id)
+    tm = project.users_projects.find_by_user_id(user_id)
+
+    # If user is not in project members
+    # we should check for group membership
+    if group && !tm
+      tm = group.users_groups.find_by_user_id(user_id)
+    end
+
+    tm
   end
 
   def add_user(user, access)
@@ -47,45 +65,23 @@ class ProjectTeam
   end
 
   def members
-    project.users_projects
+    @members ||= fetch_members
   end
 
   def guests
-    members.guests.map(&:user)
+    @guests ||= fetch_members(:guests)
   end
 
   def reporters
-    members.reporters.map(&:user)
+    @reporters ||= fetch_members(:reporters)
   end
 
   def developers
-    members.developers.map(&:user)
+    @developers ||= fetch_members(:developers)
   end
 
   def masters
-    members.masters.map(&:user)
-  end
-
-  def repository_readers
-    repository_members[UsersProject::REPORTER]
-  end
-
-  def repository_writers
-    repository_members[UsersProject::DEVELOPER]
-  end
-
-  def repository_masters
-    repository_members[UsersProject::MASTER]
-  end
-
-  def repository_members
-    keys = Hash.new {|h,k| h[k] = [] }
-    UsersProject.select("keys.identifier, project_access").
-        joins(user: :keys).where(project_id: project.id).
-        each {|row| keys[row.project_access] << [row.identifier] }
-
-    keys[UsersProject::REPORTER] += project.deploy_keys.pluck(:identifier)
-    keys
+    @masters ||= fetch_members(:masters)
   end
 
   def import(source_project)
@@ -104,7 +100,6 @@ class ProjectTeam
       new_tm = tm.dup
       new_tm.id = nil
       new_tm.project_id = target_project.id
-      new_tm.skip_git = true
       new_tm
     end
 
@@ -112,11 +107,28 @@ class ProjectTeam
       source_team.each do |tm|
         tm.save
       end
-      target_project.update_repository
     end
 
     true
   rescue
     false
+  end
+
+  private
+
+  def fetch_members(level = nil)
+    project_members = project.users_projects
+    group_members = group ? group.users_groups : []
+
+    if level
+      project_members = project_members.send(level)
+      group_members = group_members.send(level) if group
+    end
+
+    (project_members + group_members).map(&:user).uniq
+  end
+
+  def group
+    project.group
   end
 end

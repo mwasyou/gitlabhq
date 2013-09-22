@@ -29,7 +29,7 @@
     a{
       color: $style_color;
     }
-    
+
     > span {
       font-family: $monospace_font;
       font-size: 14px;
@@ -99,11 +99,24 @@
         }
       }
     }
+    .line_holder {
+      &.old .old_line,
+      &.old .new_line {
+        background: #FCC;
+        border-color: #E7BABA;
+      }
+      &.new .old_line,
+      &.new .new_line {
+        background: #CFC;
+        border-color: #B9ECB9;
+      }
+    }
     .line_content {
+      display: block;
       white-space: pre;
-      height: 14px;
+      height: 18px;
       margin: 0px;
-      padding: 0px;
+      padding: 0px 0.5em;
       border: none;
       &.new {
         background: #CFD;
@@ -124,7 +137,7 @@
     .wrap{
       display: inline-block;
     }
-    
+
     .frame {
       display: inline-block;
       background-color: #fff;
@@ -149,7 +162,7 @@
 
     .view.swipe{
       position: relative;
-      
+
       .swipe-frame{
         display: block;
         margin: auto;
@@ -228,7 +241,7 @@
         bottom: 0px;
         left: 50%;
         margin-left: -150px;
-        
+
         .drag-track{
           display: block;
           position: absolute;
@@ -237,7 +250,7 @@
           width: 276px;
           background: url('onion_skin_sprites.gif') -4px -20px repeat-x;
         }
-        
+
         .dragger {
           display: block;
           position: absolute;
@@ -248,7 +261,7 @@
           background: url('onion_skin_sprites.gif') 0px -34px repeat-x;
           cursor: pointer;
         }
-        
+
         .transparent {
           display: block;
           position: absolute;
@@ -258,7 +271,7 @@
           width: 10px;
           background: url('onion_skin_sprites.gif') -2px 0px no-repeat;
         }
-        
+
         .opaque {
           display: block;
           position: absolute;
@@ -275,19 +288,19 @@
 
     padding: 10px;
     text-align: center;
-    
+
     background-image: -webkit-gradient(linear, 0 0, 0 30, color-stop(0.066, #eee), to(#dfdfdf));
     background-image: -webkit-linear-gradient(#eee 6.6%, #dfdfdf);
     background-image: -moz-linear-gradient(#eee 6.6%, #dfdfdf);
     background-image: -o-linear-gradient(#eee 6.6%, #dfdfdf);
-    
+
     ul, li{
       list-style: none;
       margin: 0;
       padding: 0;
       display: inline-block;
     }
-    
+
     li{
       color: grey;
       border-left: 1px solid #c1c1c1;
@@ -322,66 +335,40 @@
 }
 .commit-author, .commit-committer{
   display: block;
-  color: #999; 
-  font-weight: normal; 
+  color: #999;
+  font-weight: normal;
   font-style: italic;
 }
 .commit-author strong, .commit-committer strong{
-  font-weight: bold; 
+  font-weight: bold;
   font-style: normal;
 }
 
-
-/**
- * COMMIT ROW
- */
-.commit {
-  .browse_code_link_holder {
-    @extend .span2;
-    float: right;
-  }
-
-  .committed_ago {
-    float: right;
-    @extend .cgray;
-  }
-
-  .notes_count {
-    float: right;
-    margin: -6px 8px 6px;
-  }
-
-  code {
-    background: #FCEEC1;
-    color: $style_color;
-  }
-
-  .commit_short_id {
-    float: left;
-    @extend .lined;
-    min-width: 65px;
-    font-family: $monospace_font;
-  }
-}
 
 .file-stats a {
   color: $style_color;
 }
 
 .file-stats {
-  .new-file{
-    i{
+  .new-file {
+    a {
+      color: #090;
+    }
+    i {
       color: #1BCF00;
     }
   }
-  .renamed-file{
-    i{
+  .renamed-file {
+    i {
       color: #FE9300;
     }
   }
-  .deleted-file{
-    i{
-      color: #FF0000;
+  .deleted-file {
+    a {
+      color: #B00;
+    }
+    i {
+      color: #EE0000;
     }
   }
   .edit-file{
@@ -403,8 +390,8 @@
 
 .commits-compare-switch{
   background: url("switch_icon.png") no-repeat center center;
-  width: 16px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   text-indent: -9999px;
   float: left;
   margin-right: 9px;
@@ -412,4 +399,109 @@
   @include border-radius(4px);
   padding: 4px;
   background-color: #EEE;
+}
+
+.commit-description {
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  margin-top: 10px;
+}
+
+.commit-box {
+  margin: 10px 0;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  padding: 20px 0;
+
+  .commit-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .commit-description {
+    margin-top: 15px;
+  }
+}
+
+
+.commit-stat-summary {
+  color: #666;
+  line-height: 2;
+}
+
+.commit-breadcrumb {
+  padding: 0;
+}
+
+.commit-info-row {
+  margin-bottom: 10px;
+  .avatar {
+    @extend .avatar-inline;
+  }
+  .commit-committer-link,
+  .commit-author-link {
+    color: #444;
+    font-weight: bold;
+  }
+}
+
+.lists-separator {
+  margin: 10px 0;
+  border-top: 1px dashed #CCC;
+}
+
+/**
+ * COMMIT ROW
+ */
+li.commit {
+  padding: 8px;
+
+  .commit-row-title {
+    font-size: 14px;
+    margin-bottom: 2px;
+
+    .notes_count {
+      float: right;
+      margin-right: 10px;
+    }
+
+    .commit_short_id {
+      min-width: 65px;
+      font-family: $monospace_font;
+    }
+
+    .commit-row-message {
+      color: #555;
+      font-weight: bolder;
+      &:hover {
+        color: #444;
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .commit-row-info {
+    a {
+      color: #777;
+    }
+
+    .committed_ago {
+      float: right;
+      @extend .cgray;
+    }
+  }
+
+  &.inline-commit {
+    .commit-row-title {
+      font-size: 13px;
+    }
+
+    .committed_ago {
+      float: right;
+      @extend .cgray;
+    }
+  }
 }

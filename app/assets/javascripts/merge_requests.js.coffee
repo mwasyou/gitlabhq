@@ -11,7 +11,7 @@ class MergeRequest
 
   constructor: (@opts) ->
     this.$el = $('.merge-request')
-    @diffs_loaded = false
+    @diffs_loaded = if @opts.action == 'diffs' then true else false
     @commits_loaded = false
 
     this.activateTab(@opts.action)
@@ -21,17 +21,19 @@ class MergeRequest
     this.initMergeWidget()
     this.$('.show-all-commits').on 'click', =>
       this.showAllCommits()
+    
+    modal = $('#modal_merge_info').modal(show: false)
 
   # Local jQuery finder
   $: (selector) ->
     this.$el.find(selector)
 
   initMergeWidget: ->
-    this.showState( @opts.current_state )
+    this.showState( @opts.current_status )
 
     if this.$('.automerge_widget').length and @opts.check_enable
       $.get @opts.url_to_automerge_check, (data) =>
-        this.showState( data.state )
+        this.showState( data.merge_status )
       , 'json'
 
     if @opts.ci_enable
@@ -76,7 +78,6 @@ class MergeRequest
     $('.ci_widget.ci-' + state).show()
 
   loadDiff: (event) ->
-    $('.dashboard-loader').show()
     $.ajax
       type: 'GET'
       url: this.$('.nav-tabs .diffs-tab a').attr('href')

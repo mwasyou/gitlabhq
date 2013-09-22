@@ -1,13 +1,12 @@
 class DashboardController < ApplicationController
   respond_to :html
 
-  before_filter :load_projects
+  before_filter :load_projects, except: [:projects]
   before_filter :event_filter, only: :show
 
   def show
-    @groups = current_user.authorized_groups
+    @groups = current_user.authorized_groups.sort_by(&:human_name)
     @has_authorized_projects = @projects.count > 0
-    @teams = current_user.authorized_teams
     @projects_count = @projects.count
     @projects = @projects.limit(20)
 
@@ -27,13 +26,22 @@ class DashboardController < ApplicationController
   def projects
     @projects = case params[:scope]
                 when 'personal' then
-                  @projects.personal(current_user)
+                  current_user.namespace.projects
                 when 'joined' then
-                  @projects.joined(current_user)
+                  current_user.authorized_projects.joined(current_user)
+                when 'owned' then
+                  current_user.owned_projects
                 else
-                  @projects
+                  current_user.authorized_projects
                 end
 
+    @projects = @projects.where(namespace_id: Group.find_by_name(params[:group])) if params[:group].present?
+    @projects = @projects.includes(:namespace).sorted_by_activity
+
+    @labels = current_user.authorized_projects.tags_on(:labels)
+    @groups = current_user.authorized_groups
+
+    @projects = @projects.tagged_with(params[:label]) if params[:label].present?
     @projects = @projects.page(params[:page]).per(30)
   end
 
@@ -61,10 +69,5 @@ class DashboardController < ApplicationController
 
   def load_projects
     @projects = current_user.authorized_projects.sorted_by_activity
-  end
-
-  def event_filter
-    filters = cookies['event_filter'].split(',') if cookies['event_filter']
-    @event_filter ||= EventFilter.new(filters)
   end
 end
