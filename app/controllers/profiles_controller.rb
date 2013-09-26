@@ -33,9 +33,16 @@ class ProfilesController < ApplicationController
   end
 
   def update_password
-    params[:user].reject!{ |k, v| k != "password" && k != "password_confirmation"}
+    password_attributes = params[:user].select do |key, value|
+      %w(password password_confirmation).include?(key.to_s)
+    end
 
-    if @user.update_attributes(params[:user])
+    unless @user.valid_password?(params[:user][:current_password])
+      redirect_to account_profile_path, alert: 'You must provide a valid current password'
+      return
+    end
+
+    if @user.update_attributes(password_attributes)
       flash[:notice] = "Password was successfully updated. Please login with it"
       redirect_to new_user_session_path
     else
