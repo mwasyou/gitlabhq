@@ -19,6 +19,9 @@ Vagrantfile
 .vagrant
 config/gitlab.yml
 config/database.yml
+config/initializers/omniauth.rb
+config/initializers/rack_attack.rb
+>>>>>>> 1a6ba7e640577a98b6db480c8e7884882fb0fa03
 config/unicorn.rb
 config/resque.yml
 config/aws.yml

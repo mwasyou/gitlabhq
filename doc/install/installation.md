@@ -195,6 +195,13 @@ You can change `6-1-stable` to `master` if you want the *bleeding edge* version,
     # Ex. change amount of workers to 3 for 2GB RAM server
     sudo -u git -H editor config/unicorn.rb
 
+    # Copy the example Rack attack config
+    sudo -u git -H cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb
+
+    # Enable rack attack middleware
+    # Find and uncomment the line 'config.middleware.use Rack::Attack'
+    sudo -u git -H editor config/application.rb
+
     # Configure Git global settings for git user, useful when editing via web
     # Edit user.email according to what is set in gitlab.yml
     sudo -u git -H git config --global user.name "GitLab"
@@ -209,18 +216,18 @@ Make sure to edit both `gitlab.yml` and `unicorn.rb` to match your setup.
     # Mysql
     sudo -u git cp config/database.yml.mysql config/database.yml
 
+    # Make sure to update username/password in config/database.yml.
+    # You only need to adapt the production settings (first part).
+    # If you followed the database guide then please do as follows:
+    # Change 'secure password' with the value you have given to $password
+    # You can keep the double quotes around the password
+    sudo -u git -H editor config/database.yml
+
     or
 
     # PostgreSQL
     sudo -u git cp config/database.yml.postgresql config/database.yml
 
-    # Make sure to update username/password in config/database.yml.
-    # You only need to adapt the production settings (first part).
-    # If you followed the database guide then please do as follows:
-    # Change 'root' to 'gitlab'
-    # Change 'secure password' with the value you have given to $password
-    # You can keep the double quotes around the password
-    sudo -u git -H editor config/database.yml
     
     # Make config/database.yml readable to git only
     sudo -u git -H chmod o-rwx config/database.yml
