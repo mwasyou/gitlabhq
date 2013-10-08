@@ -289,7 +289,6 @@ namespace :gitlab do
     ########################
 
     def check_gitlab_git_config
-      gitlab_user = Gitlab.config.gitlab.user
       print "Git configured for #{gitlab_user} user? ... "
 
       options = {
@@ -393,14 +392,20 @@ namespace :gitlab do
       hook_file = "update"
       gitlab_shell_hooks_path = Gitlab.config.gitlab_shell.hooks_path
       gitlab_shell_hook_file  = File.join(gitlab_shell_hooks_path, hook_file)
-      gitlab_shell_ssh_user = Gitlab.config.gitlab_shell.ssh_user
 
-      unless File.exists?(gitlab_shell_hook_file)
-        puts "can't check because of previous errors".magenta
-        return
+      if File.exists?(gitlab_shell_hook_file)
+        puts "yes".green
+      else
+        puts "no".red
+        puts "Could not find #{gitlab_shell_hook_file}"
+        try_fixing_it(
+          'Check the hooks_path in config/gitlab.yml',
+          'Check your gitlab-shell installation'
+        )
+        for_more_information(
+          see_installation_guide_section "GitLab Shell"
+        )
       end
-
-      puts "yes".green
     end
 
     def check_repo_base_exists
@@ -664,8 +669,8 @@ namespace :gitlab do
         puts "#{sidekiq_match.length}".red
         try_fixing_it(
           'sudo service gitlab stop',
-          'sudo pkill -f sidekiq',
-          'sleep 10 && sudo pkill -9 -f sidekiq',
+          "sudo pkill -u #{gitlab_user} -f sidekiq",
+          "sleep 10 && sudo pkill -9 -u #{gitlab_user} -f sidekiq",
           'sudo service gitlab start'
         )
         fix_and_rerun
@@ -709,8 +714,11 @@ namespace :gitlab do
   end
 
   def sudo_gitlab(command)
-    gitlab_user = Gitlab.config.gitlab.user
     "sudo -u #{gitlab_user} -H #{command}"
+  end
+
+  def gitlab_user
+    Gitlab.config.gitlab.user
   end
 
   def start_checking(component)
